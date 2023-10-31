@@ -1,0 +1,11 @@
+{
+  "name": "esy-boot",
+  "version": "0.1.0",
+  "description": "PoC scripts to boot esy from just C compiler and a Makefile",
+  "bin": "./esy-boot",
+  "keywords": [
+    "esy"
+  ],
+  "author": "Manas Jayanth <prometheansacrifice>",
+  "license": "MIT"
+}
