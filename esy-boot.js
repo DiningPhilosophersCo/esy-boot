@@ -1,6 +1,7 @@
 const path = require("path");
 let cp = require("child_process");
 let fs = require("fs/promises");
+let os = require("os");
 
 function normalisePackageNames(n) {
   return n
@@ -15,6 +16,10 @@ const Tools = {
   buildEnvSh: `${__dirname}/scripts/build-env.sh`,
   prepareBuildSh: `${__dirname}/scripts/prepare-build.sh`,
   installArtifactsSh: `${__dirname}/scripts/install-artifacts.sh`,
+};
+
+const esyBootInstallerPath = (cwd) => {
+  return path.join(cwd, "_boot", "store", "i", "esy-boot-installer");
 };
 
 const Package = {
@@ -62,6 +67,59 @@ const Env = {
   },
 };
 
+// {
+//     return JSON.parse(` {
+//   "id": "setup_esy_installer-fb3bf850",
+//   "name": "setup-esy-installer",
+//   "version": "github:ManasJayanth/esy-boot-installer#beee8a4775846651c958946ec1d6919e54bd49bc",
+//   "sourceType": "immutable",
+//   "buildType": "in-source",
+//   "build": [
+//     [
+//       "make", "PREFIX=%{store}%/s/setup_esy_installer-fb3bf850",
+//       "esy-installer"
+//     ]
+//   ],
+//   "install": [
+//     [ "make", "PREFIX=%{store}%/s/setup_esy_installer-fb3bf850", "install" ]
+//   ],
+//   "sourcePath": "${esyBootInstallerSrcPath}",
+//   "rootPath": "%{globalStorePrefix}%/3/b/setup_esy_installer-fb3bf850",
+//   "buildPath": "%{globalStorePrefix}%/3/b/setup_esy_installer-fb3bf850",
+//   "stagePath": "%{store}%/s/setup_esy_installer-fb3bf850",
+//   "installPath": "%{store}%/i/setup_esy_installer-fb3bf850",
+//   "env": {
+//     "cur__version": "github:ManasJayanth/esy-boot-installer#beee8a4775846651c958946ec1d6919e54bd49bc",
+//     "cur__toplevel": "%{store}%/s/setup_esy_installer-fb3bf850/toplevel",
+//     "cur__target_dir": "%{globalStorePrefix}%/3/b/setup_esy_installer-fb3bf850",
+//     "cur__stublibs": "%{store}%/s/setup_esy_installer-fb3bf850/stublibs",
+//     "cur__share": "%{store}%/s/setup_esy_installer-fb3bf850/share",
+//     "cur__sbin": "%{store}%/s/setup_esy_installer-fb3bf850/sbin",
+//     "cur__root": "%{globalStorePrefix}%/3/b/setup_esy_installer-fb3bf850",
+//     "cur__original_root": "${esyBootInstallerSrcPath}",
+//     "cur__name": "setup-esy-installer",
+//     "cur__man": "%{store}%/s/setup_esy_installer-fb3bf850/man",
+//     "cur__lib": "%{store}%/s/setup_esy_installer-fb3bf850/lib",
+//     "cur__jobs": "4",
+//     "cur__install": "%{store}%/s/setup_esy_installer-fb3bf850",
+//     "cur__etc": "%{store}%/s/setup_esy_installer-fb3bf850/etc",
+//     "cur__doc": "%{store}%/s/setup_esy_installer-fb3bf850/doc",
+//     "cur__dev": "false",
+//     "cur__bin": "%{store}%/s/setup_esy_installer-fb3bf850/bin",
+//     "SHELL": "env -i /bin/bash --norc --noprofile",
+//     "PATH": "%{store}%/i/ocaml-4.12.0-3a04ec8f/bin::/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+//     "OCAML_TOPLEVEL_PATH": "%{store}%/i/ocaml-4.12.0-3a04ec8f/lib/ocaml",
+//     "OCAMLPATH": "%{store}%/i/ocaml-4.12.0-3a04ec8f/lib:",
+//     "OCAMLLIB": "%{store}%/i/ocaml-4.12.0-3a04ec8f/lib/ocaml",
+//     "OCAMLFIND_LDCONF": "ignore",
+//     "OCAMLFIND_DESTDIR": "%{store}%/s/setup_esy_installer-fb3bf850/lib",
+//     "MAN_PATH": "%{store}%/i/ocaml-4.12.0-3a04ec8f/man:",
+//     "CAML_LD_LIBRARY_PATH": "%{store}%/i/ocaml-4.12.0-3a04ec8f/lib/ocaml/stublibs:%{store}%/i/ocaml-4.12.0-3a04ec8f/lib/ocaml:"
+//   },
+//   "jbuilderHackEnabled": false,
+//   "depspec": "dependencies(self)"
+// }`);
+//   }
 
 // Example:
 // virtualEsyBuildPlan(
@@ -114,62 +172,9 @@ const Env = {
 //   await fs.rmdir(virtualProjectPath, { recursive: true });
 //   return plan;
 // }
-const esyBuildPlanCache = new Map();
-function esyBuildPlan(esyBootInstallerSrcPath, cwd, packageName) {
-  if (packageName === "setup-esy-installer") {
-    return JSON.parse(` {
-  "id": "setup_esy_installer-fb3bf850",
-  "name": "setup-esy-installer",
-  "version": "github:ManasJayanth/esy-boot-installer#beee8a4775846651c958946ec1d6919e54bd49bc",
-  "sourceType": "immutable",
-  "buildType": "in-source",
-  "build": [
-    [
-      "make", "PREFIX=%{store}%/s/setup_esy_installer-fb3bf850",
-      "esy-installer"
-    ]
-  ],
-  "install": [
-    [ "make", "PREFIX=%{store}%/s/setup_esy_installer-fb3bf850", "install" ]
-  ],
-  "sourcePath": "${esyBootInstallerSrcPath}",
-  "rootPath": "%{globalStorePrefix}%/3/b/setup_esy_installer-fb3bf850",
-  "buildPath": "%{globalStorePrefix}%/3/b/setup_esy_installer-fb3bf850",
-  "stagePath": "%{store}%/s/setup_esy_installer-fb3bf850",
-  "installPath": "%{store}%/i/setup_esy_installer-fb3bf850",
-  "env": {
-    "cur__version": "github:ManasJayanth/esy-boot-installer#beee8a4775846651c958946ec1d6919e54bd49bc",
-    "cur__toplevel": "%{store}%/s/setup_esy_installer-fb3bf850/toplevel",
-    "cur__target_dir": "%{globalStorePrefix}%/3/b/setup_esy_installer-fb3bf850",
-    "cur__stublibs": "%{store}%/s/setup_esy_installer-fb3bf850/stublibs",
-    "cur__share": "%{store}%/s/setup_esy_installer-fb3bf850/share",
-    "cur__sbin": "%{store}%/s/setup_esy_installer-fb3bf850/sbin",
-    "cur__root": "%{globalStorePrefix}%/3/b/setup_esy_installer-fb3bf850",
-    "cur__original_root": "${esyBootInstallerSrcPath}",
-    "cur__name": "setup-esy-installer",
-    "cur__man": "%{store}%/s/setup_esy_installer-fb3bf850/man",
-    "cur__lib": "%{store}%/s/setup_esy_installer-fb3bf850/lib",
-    "cur__jobs": "4",
-    "cur__install": "%{store}%/s/setup_esy_installer-fb3bf850",
-    "cur__etc": "%{store}%/s/setup_esy_installer-fb3bf850/etc",
-    "cur__doc": "%{store}%/s/setup_esy_installer-fb3bf850/doc",
-    "cur__dev": "false",
-    "cur__bin": "%{store}%/s/setup_esy_installer-fb3bf850/bin",
-    "SHELL": "env -i /bin/bash --norc --noprofile",
-    "PATH": "%{store}%/i/ocaml-4.12.0-3a04ec8f/bin::/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
-    "OCAML_TOPLEVEL_PATH": "%{store}%/i/ocaml-4.12.0-3a04ec8f/lib/ocaml",
-    "OCAMLPATH": "%{store}%/i/ocaml-4.12.0-3a04ec8f/lib:",
-    "OCAMLLIB": "%{store}%/i/ocaml-4.12.0-3a04ec8f/lib/ocaml",
-    "OCAMLFIND_LDCONF": "ignore",
-    "OCAMLFIND_DESTDIR": "%{store}%/s/setup_esy_installer-fb3bf850/lib",
-    "MAN_PATH": "%{store}%/i/ocaml-4.12.0-3a04ec8f/man:",
-    "CAML_LD_LIBRARY_PATH": "%{store}%/i/ocaml-4.12.0-3a04ec8f/lib/ocaml/stublibs:%{store}%/i/ocaml-4.12.0-3a04ec8f/lib/ocaml:"
-  },
-  "jbuilderHackEnabled": false,
-  "depspec": "dependencies(self)"
-}`);
-  }
+
 async function esyBuildPlan(esyBootInstallerSrcPath, cwd, packageName) {
+  //
   // DEPRECATED: setup-esy-installer will no longer be
   // hooked into current sandbox
   // if (packageName === "setup-esy-installer") {
@@ -183,20 +188,30 @@ async function esyBuildPlan(esyBootInstallerSrcPath, cwd, packageName) {
   //     cwd
   //   );
   // }
+  //
 
-  let cmd = "esy build-plan";
+  //
+  // We no longer cache the following command's output like we used to
+  // 1. de-duplication must happen before graph traversal
+  // 2. package ocaml might return different build-plans given
+  //    how its also used to build esy-boot-installer in a separate
+  //    sandbox.
+  //
+  let cmd = `esy build-plan --release -P ${cwd}`;
   if (packageName) {
-    let cachedResults = esyBuildPlanCache.get(packageName);
-    if (cachedResults) {
-      return cachedResults;
-    }
     cmd = `${cmd} -p ${packageName}`;
   }
-  let result = JSON.parse(cp.execSync(cmd).toString("utf-8"));
-  if (packageName) {
-    esyBuildPlanCache.set(packageName, result);
-  }
-  return result;
+  return JSON.parse(cp.execSync(cmd).toString("utf-8"));
+}
+
+async function esyInstall(cwd) {
+  let cmd = `esy install -P ${cwd}`;
+  cp.execSync(cmd).toString("utf-8");
+}
+
+async function esyStatus(cwd) {
+  let cmd = `esy status -P ${cwd}`;
+  JSON.parse(cp.execSync(cmd).toString("utf-8"));
 }
 
 function renderEsyVariables(
@@ -234,7 +249,11 @@ async function traverse(
   if (makeFile.get(packageName)) {
     return makeFile;
   } else {
-    let buildPlan = esyBuildPlan(esyBootInstallerSrcPath, cwd, packageName);
+    let buildPlan = await esyBuildPlan(
+      esyBootInstallerSrcPath,
+      cwd,
+      packageName
+    );
     let renderedEnv = Env.render(buildPlan.env, {
       localStore,
       store,
@@ -384,6 +403,7 @@ async function traverse(
 
 async function emitBuild(
   cwd,
+  lockFile,
   localStore,
   store,
   globalStorePrefix,
@@ -391,8 +411,7 @@ async function emitBuild(
   esyBootInstallerSrcPath
 ) {
   const project = cwd;
-  const rootProjectBuildPlan = esyBuildPlan(esyBootInstallerSrcPath, cwd);
-  const lockFile = require(path.join(cwd, "esy.lock", "index.json"));
+  const rootProjectBuildPlan = await esyBuildPlan(esyBootInstallerSrcPath, cwd);
   /* type rule = { target, deps, build } */
   const makeFile /* Map<string, rule> */ = new Map();
   return Array.from(
@@ -408,21 +427,23 @@ async function emitBuild(
       )
     ).values()
   )
-
     .map(Compile.rule)
     .join("\n\n");
 }
 
 async function compileMakefile({
   fileName,
+  lockFile,
   localStore,
   store,
   globalStorePrefix,
   sources,
   esyBootInstallerSrcPath,
+  cwd,
 }) {
   let makeFile = await emitBuild(
-    process.cwd(),
+    cwd,
+    lockFile,
     localStore,
     store,
     globalStorePrefix,
@@ -452,8 +473,14 @@ function log(...args) {
 
 async function setupPaths(cwd) {
   const tarballs = path.join(cwd, "_boot", "tarballs");
+  const esyBootInstallerTarballs = path.join(
+    cwd,
+    "_boot",
+    "esy-boot-installer-tarballs"
+  );
   const sources = path.join(cwd, "_boot", "sources");
-  let esyBootInstallerSrcPath = path.join(sources, "esy-boot-installer");
+  const esyBootInstallerSrcPath = path.join(sources, "esy-boot-installer");
+  // No need to mkdirp esyBootInstallerSrcPath because git clone will do it for us
   await fs.mkdir(sources, { recursive: true });
   const localStore = path.join(cwd, "_boot", "store");
   await fs.mkdir(localStore, { recursive: true });
@@ -463,6 +490,7 @@ async function setupPaths(cwd) {
   await fs.mkdir(globalStorePrefix, { recursive: true });
   await fs.mkdir(path.join(globalStorePrefix, "b"), { recursive: true });
   await fs.mkdir(path.join(globalStorePrefix, "3", "b"), { recursive: true });
+  await fs.mkdir(path.join(globalStorePrefix, "3", "i"), { recursive: true });
 
   return {
     sources,
@@ -471,6 +499,7 @@ async function setupPaths(cwd) {
     store,
     globalStorePrefix,
     esyBootInstallerSrcPath,
+    esyBootInstallerTarballs,
   };
 }
 
@@ -482,7 +511,13 @@ async function exists(path) {
     return false;
   }
 }
-async function fetchSources({ tarballs, sources, esyBootInstallerSrcPath }) {
+async function fetchSources({
+  cwd,
+  tarballs,
+  esyBootInstallerTarballs,
+  sources,
+  esyBootInstallerSrcPath,
+}) {
   let cmd = `sh ${__dirname}/scripts/fetch-sources.sh --sources-cache=${sources} --tarballs=${tarballs}`;
   log(`Fetching source tarballs with '${cmd}'`);
   cp.execSync(cmd);
@@ -493,6 +528,28 @@ async function fetchSources({ tarballs, sources, esyBootInstallerSrcPath }) {
     log(`Cloning esy-boot-installer in ${sources}: ${cmd}`);
     cp.execSync(cmd);
   }
+  cmd = `sh ${__dirname}/scripts/fetch-sources.sh --sources-cache=${sources} --tarballs=${esyBootInstallerTarballs} --project=${esyBootInstallerSrcPath}`;
+  log(`Fetching source tarballs for esy-boot-installer with '${cmd}'`);
+  cp.execSync(cmd);
+}
+
+async function compileEsyBootInstaller({ esyBootInstallerSrcPath, ...args }) {
+  let fileName = "boot.esy-boot-installer.Makefile";
+  const lockFile = require(path.join(
+    esyBootInstallerSrcPath,
+    "esy.lock",
+    "index.json"
+  ));
+  esyInstall(esyBootInstallerSrcPath);
+  const status = await esyStatus(esyBootInstallerSrcPath);
+  await compileMakefile({
+    fileName,
+    lockFile,
+    esyBootInstallerSrcPath,
+    ...args,
+    cwd: esyBootInstallerSrcPath,
+  });
+  return status.rootInstallPath;
 }
 
 async function main(fileName) {
@@ -504,16 +561,35 @@ async function main(fileName) {
     store,
     globalStorePrefix,
     esyBootInstallerSrcPath,
+    esyBootInstallerTarballs,
   } = await setupPaths(cwd);
-  await fetchSources({ tarballs, sources, esyBootInstallerSrcPath });
-  await compileMakefile({
-    fileName,
+  await fetchSources({
+    cwd,
+    tarballs,
+    sources,
+    esyBootInstallerSrcPath,
+    esyBootInstallerTarballs,
+  });
+  const esyBootInstallerInstallPath = await compileEsyBootInstaller({
     localStore,
     store,
     globalStorePrefix,
     sources,
     esyBootInstallerSrcPath,
+    cwd,
   });
+  console.log(">>>", esyBootInstallerInstallPath);
+  // const lockFile = require(path.join(cwd, "esy.lock", "index.json"));
+  // await compileMakefile({
+  //   fileName,
+  //   lockFile,
+  //   localStore,
+  //   store,
+  //   globalStorePrefix,
+  //   sources,
+  //   esyBootInstallerSrcPath,
+  //   cwd
+  // });
 }
 
 main(process.argv[2]);
