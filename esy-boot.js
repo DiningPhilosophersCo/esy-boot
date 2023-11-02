@@ -117,6 +117,20 @@ function esyBuildPlan(esyBootInstallerSrcPath, cwd, packageName) {
   "depspec": "dependencies(self)"
 }`);
   }
+async function esyBuildPlan(esyBootInstallerSrcPath, cwd, packageName) {
+  // DEPRECATED: setup-esy-installer will no longer be
+  // hooked into current sandbox
+  // if (packageName === "setup-esy-installer") {
+  //   return virtualEsyBuildPlan(
+  //     {
+  //       name: "esy-boot-installer",
+  //       version: "ManasJayanth/esy-boot-installer:esy.json",
+  //     },
+  //     ["ocaml"],
+  //     esyBootInstallerSrcPath,
+  //     cwd
+  //   );
+  // }
 
   let cmd = "esy build-plan";
   if (packageName) {
@@ -281,10 +295,11 @@ async function traverse(
               ],
             ]
       );
-    // A trick to make sure setup-esy-installer is run before everything else, including Dune
-    if (packageName === "@opam/dune" || packageName === "@opam/ocamlbuild") {
-      dependencies.push("setup-esy-installer@vvv@hhh");
-    }
+    // DEPRECATED: the following approach is no longer in use.
+    // // A trick to make sure setup-esy-installer is run before everything else, including Dune
+    // if (packageName === "@opam/dune" || packageName === "@opam/ocamlbuild") {
+    //   dependencies.push("setup-esy-installer@vvv@hhh");
+    // }
     for (let dep of dependencies) {
       makeFile = await traverse(
         makeFile,
