@@ -27,6 +27,10 @@ case "$1" in
 	TARBALLS=$(echo "$1" | sed 's/.*=//')
 	shift;
 	;;
+    --project=*)
+	PROJECT_PATH=$(echo "$1" | sed 's/.*=//')
+	shift;
+	;;
     --sources-cache=*)
 	SOURCE_CACHE_PATH=$(echo "$1" | sed 's/.*=//')
 	shift;
@@ -36,7 +40,12 @@ case "$1" in
 esac
 done
 
-esy i --cache-tarballs-path="$TARBALLS"
+if [ -z "$PROJECT_PATH" ]
+then
+   PROJECT_PATH="$PWD"
+fi
+
+esy i --project "$PROJECT_PATH" --cache-tarballs-path="$TARBALLS"
 
 for TARBALL_PATH in $(find "$TARBALLS" -print)
 do
