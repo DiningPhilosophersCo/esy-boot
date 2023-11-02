@@ -62,6 +62,58 @@ const Env = {
   },
 };
 
+
+// Example:
+// virtualEsyBuildPlan(
+//   {
+//     name: "esy-boot-installer",
+//     version: "ManasJayanth/esy-boot-installer:esy.json",
+//   },
+//   ["ocaml"],
+//   "/Users/manas/development/esy/esy-mandir/_boot/sources/esy-boot-installer",
+//   process.cwd()
+// ).then(console.log);
+// async function virtualEsyBuildPlan(
+//   pkg /* { name: string, version: constraint } */,
+//   deps,
+//   pkgSourcePath,
+//   currentProjectWorkingDirectory
+// ) {
+//   let virtualProject = "test-project";
+//   let virtualProjectPath = path.join(os.tmpdir(), virtualProject);
+//   await fs.mkdir(virtualProjectPath, { recursive: true });
+//   let virtualProjectManifestPath = path.join(virtualProjectPath, "esy.json");
+//   let cmd = `esy status -P ${currentProjectWorkingDirectory} --json`;
+//   let currentProjectManifestPath = JSON.parse(
+//     cp.execSync(cmd).toString()
+//   ).rootPackageConfigPath;
+//   const { dependencies } = JSON.parse(
+//     await fs.readFile(currentProjectManifestPath)
+//   );
+//   await fs.writeFile(
+//     virtualProjectManifestPath,
+//     JSON.stringify({
+//       dependencies: deps.reduce(
+//         (acc, dep) => {
+//           acc[dep] = dependencies[dep];
+//           return acc;
+//         },
+//         { [pkg.name]: pkg.version }
+//       ),
+//     })
+//   );
+//   cp.execSync("esy i", { cwd: virtualProjectPath });
+//   let plan = JSON.parse(
+//     cp
+//       .execSync(`esy build-plan -P ${virtualProjectPath} -p ${pkg.name}`, {
+//         cwd: virtualProjectPath,
+//       })
+//       .toString()
+//   );
+//   plan.env.cur__original_root = plan.sourcePath = pkgSourcePath;
+//   await fs.rmdir(virtualProjectPath, { recursive: true });
+//   return plan;
+// }
 const esyBuildPlanCache = new Map();
 function esyBuildPlan(esyBootInstallerSrcPath, cwd, packageName) {
   if (packageName === "setup-esy-installer") {
