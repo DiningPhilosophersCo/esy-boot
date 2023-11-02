@@ -1,6 +1,6 @@
 #! /bin/bash
 
-set -x
+set -e
 
 ENV_FILE="$1"
 PATH_FILE="$2"
