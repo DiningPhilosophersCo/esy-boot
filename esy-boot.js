@@ -209,11 +209,6 @@ async function esyInstall(cwd) {
   cp.execSync(cmd).toString("utf-8");
 }
 
-async function esyStatus(cwd) {
-  let cmd = `esy status -P ${cwd}`;
-  JSON.parse(cp.execSync(cmd).toString("utf-8"));
-}
-
 function renderEsyVariables(
   str,
   { localStore, store, globalStorePrefix, sources, project }
@@ -541,7 +536,13 @@ async function compileEsyBootInstaller({ esyBootInstallerSrcPath, ...args }) {
     "index.json"
   ));
   esyInstall(esyBootInstallerSrcPath);
-  const status = await esyStatus(esyBootInstallerSrcPath);
+  // esy status doesn't work here because esy uses localStore, _esy,
+  // to install artifacts. We, OTOH, have set localStore = globalStore
+  let buildPlan = await esyBuildPlan(
+    esyBootInstallerSrcPath,
+    esyBootInstallerSrcPath
+  );
+  let installPath = renderEsyVariables(buildPlan.installPath, args);
   await compileMakefile({
     fileName,
     lockFile,
@@ -549,7 +550,7 @@ async function compileEsyBootInstaller({ esyBootInstallerSrcPath, ...args }) {
     ...args,
     cwd: esyBootInstallerSrcPath,
   });
-  return status.rootInstallPath;
+  return installPath;
 }
 
 async function main(fileName) {
