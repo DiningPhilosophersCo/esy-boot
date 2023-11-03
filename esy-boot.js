@@ -173,7 +173,7 @@ const Env = {
 //   return plan;
 // }
 
-async function esyBuildPlan(esyBootInstallerSrcPath, cwd, packageName) {
+async function esyBuildPlan(cwd, packageName) {
   //
   // DEPRECATED: setup-esy-installer will no longer be
   // hooked into current sandbox
@@ -244,11 +244,7 @@ async function traverse(
   if (makeFile.get(packageName)) {
     return makeFile;
   } else {
-    let buildPlan = await esyBuildPlan(
-      esyBootInstallerSrcPath,
-      cwd,
-      packageName
-    );
+    let buildPlan = await esyBuildPlan(cwd, packageName);
     let renderedEnv = Env.render(buildPlan.env, {
       localStore,
       store,
@@ -406,7 +402,7 @@ async function emitBuild(
   esyBootInstallerSrcPath
 ) {
   const project = cwd;
-  const rootProjectBuildPlan = await esyBuildPlan(esyBootInstallerSrcPath, cwd);
+  const rootProjectBuildPlan = await esyBuildPlan(cwd);
   /* type rule = { target, deps, build } */
   const makeFile /* Map<string, rule> */ = new Map();
   return Array.from(
@@ -538,10 +534,7 @@ async function compileEsyBootInstaller({ esyBootInstallerSrcPath, ...args }) {
   esyInstall(esyBootInstallerSrcPath);
   // esy status doesn't work here because esy uses localStore, _esy,
   // to install artifacts. We, OTOH, have set localStore = globalStore
-  let buildPlan = await esyBuildPlan(
-    esyBootInstallerSrcPath,
-    esyBootInstallerSrcPath
-  );
+  let buildPlan = await esyBuildPlan(esyBootInstallerSrcPath);
   let installPath = renderEsyVariables(buildPlan.installPath, args);
   await compileMakefile({
     fileName,
