@@ -18,10 +18,6 @@ const Tools = {
   installArtifactsSh: `${__dirname}/scripts/install-artifacts.sh`,
 };
 
-const esyBootInstallerPath = (cwd) => {
-  return path.join(cwd, "_boot", "store", "i", "esy-boot-installer");
-};
-
 const Package = {
   nameOfLockEntry: (entry) => {
     let parts = entry.split("@");
@@ -228,7 +224,7 @@ async function traverse(
   lockFile,
   packageID,
   cwd,
-  esyBootInstallerSrcPath
+  esyBootInstallerInstallPath
 ) {
   let dependencies;
   if (packageID === "setup-esy-installer@vvv@hhh") {
@@ -348,10 +344,7 @@ async function traverse(
                 Tools.installArtifactsSh,
                 envFile,
                 pathFile,
-                path.join(
-                  cwd,
-                  "_boot/store/i/setup_esy_installer-fb3bf850/bin/esy-installer"
-                ), // TODO replace this hardcoded path
+                path.join(esyBootInstallerInstallPath, "bin", "esy-installer"),
                 curInstallImmutable,
                 packageName,
               ],
@@ -370,7 +363,7 @@ async function traverse(
         lockFile,
         dep,
         cwd,
-        esyBootInstallerSrcPath
+        esyBootInstallerInstallPath
       );
     }
 
@@ -399,7 +392,7 @@ async function emitBuild(
   store,
   globalStorePrefix,
   sources,
-  esyBootInstallerSrcPath
+  esyBootInstallerInstallPath
 ) {
   const project = cwd;
   const rootProjectBuildPlan = await esyBuildPlan(cwd);
@@ -414,7 +407,7 @@ async function emitBuild(
         lockFile,
         lockFile.root,
         cwd,
-        esyBootInstallerSrcPath
+        esyBootInstallerInstallPath
       )
     ).values()
   )
@@ -429,7 +422,7 @@ async function compileMakefile({
   store,
   globalStorePrefix,
   sources,
-  esyBootInstallerSrcPath,
+  esyBootInstallerInstallPath,
   cwd,
 }) {
   let makeFile = await emitBuild(
@@ -439,7 +432,7 @@ async function compileMakefile({
     store,
     globalStorePrefix,
     sources,
-    esyBootInstallerSrcPath
+    esyBootInstallerInstallPath
   );
   if (fileName) {
     log(`Writing to file: ${fileName}`);
@@ -539,7 +532,7 @@ async function compileEsyBootInstaller({ esyBootInstallerSrcPath, ...args }) {
   await compileMakefile({
     fileName,
     lockFile,
-    esyBootInstallerSrcPath,
+    installPath,
     ...args,
     cwd: esyBootInstallerSrcPath,
   });
@@ -572,18 +565,17 @@ async function main(fileName) {
     esyBootInstallerSrcPath,
     cwd,
   });
-  console.log(">>>", esyBootInstallerInstallPath);
-  // const lockFile = require(path.join(cwd, "esy.lock", "index.json"));
-  // await compileMakefile({
-  //   fileName,
-  //   lockFile,
-  //   localStore,
-  //   store,
-  //   globalStorePrefix,
-  //   sources,
-  //   esyBootInstallerSrcPath,
-  //   cwd
-  // });
+  const lockFile = require(path.join(cwd, "esy.lock", "index.json"));
+  await compileMakefile({
+    fileName,
+    lockFile,
+    localStore,
+    store,
+    globalStorePrefix,
+    sources,
+    esyBootInstallerInstallPath,
+    cwd,
+  });
 }
 
 main(process.argv[2]);
