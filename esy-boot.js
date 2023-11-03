@@ -3,15 +3,6 @@ let cp = require("child_process");
 let fs = require("fs/promises");
 let os = require("os");
 
-function normalisePackageNames(n) {
-  return n
-    .replace(/@/g, "__AT__")
-    .replace(/\//g, "__s__")
-    .replace(/\./g, "__DOT__")
-    .replace(/#/g, "__HASH__")
-    .replace(/:/g, "__COLON__");
-}
-
 const Tools = {
   buildEnvSh: `${__dirname}/scripts/build-env.sh`,
   prepareBuildSh: `${__dirname}/scripts/prepare-build.sh`,
