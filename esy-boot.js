@@ -25,6 +25,17 @@ const Compile = {
     `${target}: ${deps.join(" ")}\n\t${buildCommands
       .map((command) => command.join(" "))
       .join("; ")}`,
+  makeFile: (rules) => {
+    let compiledRules = rules.map(Compile.rule).join("\n\n");
+    let phonyTargets = rules.filter((r) => r.phony).map((r) => r.target);
+    if (phonyTargets.length) {
+      return `.PHONY: ${phonyTargets.join(" ")}
+
+${compiledRules}`;
+    } else {
+      return compiledRules;
+    }
+  },
 };
 
 const Env = {
@@ -370,6 +381,7 @@ async function traverse(
       target: packageName,
       deps: [curInstallImmutable],
       buildCommands: [],
+      phony: true,
     });
 
     return makeFile;
@@ -389,21 +401,30 @@ async function emitBuild(
   const rootProjectBuildPlan = await esyBuildPlan(cwd);
   /* type rule = { target, deps, build } */
   const makeFile /* Map<string, rule> */ = new Map();
-  return Array.from(
-    (
-      await traverse(
-        makeFile,
-        new Map(),
-        { localStore, store, globalStorePrefix, sources, project },
-        lockFile,
-        lockFile.root,
-        cwd,
-        esyBootInstallerInstallPath
-      )
-    ).values()
-  )
-    .map(Compile.rule)
-    .join("\n\n");
+  let curInstallMap = new Map();
+  let rulesMap = await traverse(
+    makeFile,
+    curInstallMap,
+    { localStore, store, globalStorePrefix, sources, project },
+    lockFile,
+    lockFile.root,
+    cwd,
+    esyBootInstallerInstallPath
+  );
+  return Compile.makeFile(
+    Array.from(rulesMap.values()).map((rule) => {
+      let { deps } = rule;
+      deps = deps.map((name) => {
+        let installPath = curInstallMap.get(name);
+        if (installPath) {
+          return installPath;
+        } else {
+          return name;
+        }
+      });
+      return { ...rule, deps };
+    })
+  );
 }
 
 async function compileMakefile({
