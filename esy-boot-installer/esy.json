@@ -1,0 +1,32 @@
+{
+  "name": "esy-boot-installer",
+  "esy": {
+    "buildsInSource": true,
+    "build": "make PREFIX=#{self.install} esy-installer",
+    "install": "make PREFIX=#{self.install} install",
+    "exportedEnv": {
+      "OCAMLRUNPARAM": {
+        "val": "",
+        "scope": "global"
+      },
+      "cur__install": {
+        "val": "_boot",
+        "scope": "global"
+      },
+      "cur__root": {
+        "val": "_boot",
+        "scope": "global"
+      }
+    }
+  },
+  "scripts": {
+    "start": "esy x esy-installer"
+  },
+  "dependencies": {
+    "ocaml": "*"
+  },
+  "devDependencies": {
+    "@opam/ocaml-lsp-server": "*",
+    "@opam/ocamlformat": "> 0.21.0"
+  }
+}
