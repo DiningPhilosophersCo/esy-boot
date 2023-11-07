@@ -4,9 +4,11 @@ let fs = require("fs/promises");
 let os = require("os");
 
 const Tools = {
-  buildEnvSh: `${__dirname}/scripts/build-env.sh`,
-  prepareBuildSh: `${__dirname}/scripts/prepare-build.sh`,
-  installArtifactsSh: `${__dirname}/scripts/install-artifacts.sh`,
+  init: (projectRoot) => ({
+    buildEnvSh: `${projectRoot}/_boot/scripts/build-env.sh`,
+    prepareBuildSh: `${projectRoot}/_boot/scripts/prepare-build.sh`,
+    installArtifactsSh: `${projectRoot}/_boot/scripts/install-artifacts.sh`,
+  }),
 };
 
 const Package = {
@@ -226,8 +228,10 @@ async function traverse(
   lockFile,
   packageID,
   cwd,
+  projectRoot,
   esyBootInstallerInstallPath
 ) {
+  let tools = Tools.init(projectRoot);
   let dependencies;
   if (packageID === "setup-esy-installer@vvv@hhh") {
     dependencies = Object.keys(lockFile.node).filter((k) =>
@@ -296,7 +300,7 @@ async function traverse(
       )
       .map((args) => {
         return [
-          Tools.buildEnvSh,
+          tools.buildEnvSh,
           envFile,
           pathFile,
           `"${args.map((c) => "'" + c.replace(/'/g, "") + "'").join(" ")}"`,
@@ -314,7 +318,7 @@ async function traverse(
         ["mkdir", "-p", curTargetDir],
       ].concat(buildCommands);
     }
-    buildCommands = [["bash", Tools.prepareBuildSh, curInstall]]
+    buildCommands = [["bash", tools.prepareBuildSh, curInstall]]
       .concat(buildCommands)
       .concat(
         buildPlan.install && buildPlan.install.length !== 0
@@ -331,8 +335,15 @@ async function traverse(
                 )
               )
               .map((args) => {
+                if (args[0] === "esy-installer") {
+                  args[0] = path.join(
+                    esyBootInstallerInstallPath,
+                    "bin",
+                    "esy-installer"
+                  );
+                }
                 return [
-                  Tools.buildEnvSh,
+                  tools.buildEnvSh,
                   envFile,
                   pathFile,
                   `"${args
@@ -343,7 +354,7 @@ async function traverse(
           : [
               [
                 "bash",
-                Tools.installArtifactsSh,
+                tools.installArtifactsSh,
                 envFile,
                 pathFile,
                 path.join(esyBootInstallerInstallPath, "bin", "esy-installer"),
@@ -365,6 +376,7 @@ async function traverse(
         lockFile,
         dep,
         cwd,
+        projectRoot,
         esyBootInstallerInstallPath
       );
     }
@@ -390,6 +402,7 @@ async function traverse(
 
 async function emitBuild(
   cwd,
+  projectRoot,
   lockFile,
   localStore,
   store,
@@ -409,6 +422,7 @@ async function emitBuild(
     lockFile,
     lockFile.root,
     cwd,
+    projectRoot,
     esyBootInstallerInstallPath
   );
   return Compile.makeFile(
@@ -436,9 +450,11 @@ async function compileMakefile({
   sources,
   esyBootInstallerInstallPath,
   cwd,
+  projectRoot,
 }) {
   let makeFile = await emitBuild(
     cwd,
+    projectRoot,
     lockFile,
     localStore,
     store,
@@ -474,9 +490,17 @@ async function setupPaths(cwd) {
     "_boot",
     "esy-boot-installer-tarballs"
   );
+  const scripts = path.join(cwd, "_boot", "scripts");
+  await fs.cp(path.join(__dirname, "scripts"), scripts, { recursive: true });
   const sources = path.join(cwd, "_boot", "sources");
   const esyBootInstallerSrcPath = path.join(sources, "esy-boot-installer");
-  // No need to mkdirp esyBootInstallerSrcPath because git clone will do it for us
+  if (!(await exists(esyBootInstallerSrcPath))) {
+    await fs.cp(
+      path.join(__dirname, "esy-boot-installer"),
+      esyBootInstallerSrcPath,
+      { recursive: true }
+    );
+  }
   await fs.mkdir(sources, { recursive: true });
   const localStore = path.join(cwd, "_boot", "store");
   await fs.mkdir(localStore, { recursive: true });
@@ -485,6 +509,7 @@ async function setupPaths(cwd) {
   const globalStorePrefix = path.join(cwd, "_boot", "store");
   await fs.mkdir(globalStorePrefix, { recursive: true });
   await fs.mkdir(path.join(globalStorePrefix, "b"), { recursive: true });
+  await fs.mkdir(path.join(globalStorePrefix, "i"), { recursive: true });
   await fs.mkdir(path.join(globalStorePrefix, "3", "b"), { recursive: true });
   await fs.mkdir(path.join(globalStorePrefix, "3", "i"), { recursive: true });
 
@@ -517,13 +542,6 @@ async function fetchSources({
   let cmd = `sh ${__dirname}/scripts/fetch-sources.sh --sources-cache=${sources} --tarballs=${tarballs}`;
   log(`Fetching source tarballs with '${cmd}'`);
   cp.execSync(cmd);
-  if (!(await exists(esyBootInstallerSrcPath))) {
-    let esyBootInstallerGithubUrl =
-      "git@github.com:ManasJayanth/esy-boot-installer.git";
-    cmd = `git clone ${esyBootInstallerGithubUrl} ${esyBootInstallerSrcPath}`;
-    log(`Cloning esy-boot-installer in ${sources}: ${cmd}`);
-    cp.execSync(cmd);
-  }
   cmd = `sh ${__dirname}/scripts/fetch-sources.sh --sources-cache=${sources} --tarballs=${esyBootInstallerTarballs} --project=${esyBootInstallerSrcPath}`;
   log(`Fetching source tarballs for esy-boot-installer with '${cmd}'`);
   cp.execSync(cmd);
@@ -569,6 +587,42 @@ async function main(fileName) {
     esyBootInstallerSrcPath,
     esyBootInstallerTarballs,
   });
+
+  // FIXME: @opam/seq doesn't get extracted properly. Has to be done from esy store
+  try {
+    const esyBuildPlanSeqSrcPath = (await esyBuildPlan(cwd, "@opam/seq"))
+      .sourcePath;
+    const bootStoreSeqSrcPath = path.join(
+      sources,
+      path.basename(esyBuildPlanSeqSrcPath)
+    );
+    const installationJson = require(path.join(
+      cwd,
+      "_esy",
+      "default",
+      "installation.json"
+    ));
+    const possibleSeqPackageIDs = Object.keys(installationJson).filter((k) =>
+      k.startsWith("@opam/seq")
+    );
+    let seqPackageID;
+    if (possibleSeqPackageIDs.length > 0) {
+      seqPackageID = possibleSeqPackageIDs[0];
+      let seqSourcePath = installationJson[seqPackageID];
+      await fs.cp(seqSourcePath, bootStoreSeqSrcPath, { recursive: true });
+    }
+  } catch (e) {
+    if (
+      e.stderr.toString() !==
+      `error: no package found: @opam/seq
+  
+esy: exiting due to errors above
+`
+    ) {
+      throw e;
+    }
+  }
+
   const esyBootInstallerInstallPath = await compileEsyBootInstaller({
     localStore,
     store,
@@ -576,6 +630,7 @@ async function main(fileName) {
     sources,
     esyBootInstallerSrcPath,
     cwd,
+    projectRoot: cwd,
   });
   const lockFile = require(path.join(cwd, "esy.lock", "index.json"));
   await compileMakefile({
@@ -587,6 +642,7 @@ async function main(fileName) {
     sources,
     esyBootInstallerInstallPath,
     cwd,
+    projectRoot: cwd,
   });
 }
 
