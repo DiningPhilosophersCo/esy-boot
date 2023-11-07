@@ -2,8 +2,11 @@
   "name": "esy-boot-installer",
   "esy": {
     "buildsInSource": true,
-    "build": "make PREFIX=#{self.install} esy-installer",
-    "install": "make PREFIX=#{self.install} install",
+    "build": ["make esy-installer", "make test"],
+    "buildEnv": {
+      "PREFIX": "#{self.install}"
+    },
+    "install": "make install",
     "exportedEnv": {
       "OCAMLRUNPARAM": {
         "val": "",

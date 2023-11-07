@@ -10,6 +10,9 @@ parser.$(OCAML_OBJECT_EXT): parser.mli parser.ml # make sure mli is before ml. O
 lexer.$(OCAML_OBJECT_EXT): lexer.ml
 	$(OCAML_COMPILER) -c $?
 
-esy_installer.$(OCAML_OBJECT_EXT): esy_installer.mli esy_installer.ml
-	$(OCAML_COMPILER) -c $? # only dependencies newer than target need to be built
+fs.$(OCAML_INTERFACE_EXT) fs.$(OCAML_OBJECT_EXT): fs.ml
+	$(OCAML_COMPILER) -I +unix -c $?
+
+esy_installer.$(OCAML_OBJECT_EXT): fs.$(OCAML_OBJECT_EXT) esy_installer.mli esy_installer.ml
+	$(OCAML_COMPILER) -c -I +str $? # only dependencies newer than target need to be built
 

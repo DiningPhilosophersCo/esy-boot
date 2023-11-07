@@ -10,9 +10,17 @@ let main ~install_file =
     let cur_root = Sys.getenv "cur__root" in
     let fold_artifacts acc (artifact_build_path, custom_destination_path) =
       let src =
-        if Filename.is_relative artifact_build_path then
-          Printf.sprintf "%s/%s" cur_root artifact_build_path
-        else artifact_build_path
+        match Filename.is_relative artifact_build_path with
+        | true ->
+            if String.starts_with ~prefix:"?" artifact_build_path then
+              let artifact_build_path_len = String.length artifact_build_path in
+              let artifact_build_path =
+                String.sub artifact_build_path 1 (artifact_build_path_len - 1)
+              in
+              let src = Filename.concat cur_root artifact_build_path in
+              if Sys.file_exists src then Some src else None
+            else Some (Filename.concat cur_root artifact_build_path)
+        | false -> Some artifact_build_path
       in
       let artifact_filename = Filename.basename artifact_build_path in
       let artifact_path_within_prefix =
@@ -89,16 +97,16 @@ let main ~install_file =
     in
     List.fold_left fold_artifacts acc artifacts
   in
-  let print_ops (src, dest) =
-    print_endline @@ Printf.sprintf "mkdir -p %s" (Filename.dirname dest);
-    print_endline
-    @@ Printf.sprintf "cp %s %s || true"
-         (Str.global_replace (Str.regexp "?") "" src)
-         dest
-    (* TODO not all copy operations must silently fail. Only source paths with ? can *)
+  let f (src, dest) =
+    Fs.mkdirp (Filename.dirname dest);
+    match src with
+    | Some src ->
+        Fs.copy src dest;
+        print_endline @@ Printf.sprintf "%s -> %s" src dest
+    | None -> ()
   in
   Parser.main Lexer.token lexbuf
   |> List.fold_left fold_entries []
-  |> List.iter print_ops
+  |> List.iter f
 
 let () = main ~install_file:Sys.argv.(1)
