@@ -47,7 +47,7 @@ fi
 
 esy i --project "$PROJECT_PATH" --cache-tarballs-path="$TARBALLS"
 
-for TARBALL_PATH in $(find "$TARBALLS" -print)
+for TARBALL_PATH in $(find "$TARBALLS" -depth 1)
 do
     echo "Extracting $TARBALL_PATH"
     FILENAME="$(basename "$TARBALL_PATH")"
@@ -56,5 +56,5 @@ do
     echo "Dir: $DIR"
     SOURCE_CACHE_ENTRY="$SOURCE_CACHE_PATH/$DIR"
     mkdir -p "$SOURCE_CACHE_ENTRY"
-    tar -xf "$TARBALL_PATH" -C "$SOURCE_CACHE_ENTRY" || true
+    tar -xf "$TARBALL_PATH" -C "$SOURCE_CACHE_ENTRY"
 done
