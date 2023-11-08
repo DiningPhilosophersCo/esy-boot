@@ -1,6 +1,6 @@
 #! /bin/sh
 
-set -e
+set -ex
 
 # shellcheck disable=SC2001
 #   2001 complains bash variable substitution could be considered instead of echo/sed pattern
@@ -11,6 +11,7 @@ print_usage () {
     echo ""
     echo "untar-sources.sh"
     echo "--help                          Show this help message"
+    echo "--project=<path/to/esy/project> Specifies path where the project to be bootstrapped is located"
     echo "--tarballs=<path/to/download/tarballs/to> Specifies path where tarball can be downloaded"
     echo "--sources-cache=</path/to/esy/sources/cache>      Specifies url of the tarball to be downloaded"
     echo ""
@@ -45,9 +46,11 @@ then
    PROJECT_PATH="$PWD"
 fi
 
+BOOT_DIR="$PROJECT_PATH/_boot"
+
 esy i --project "$PROJECT_PATH" --cache-tarballs-path="$TARBALLS"
 
-for TARBALL_PATH in $(find "$TARBALLS" -depth 1)
+for TARBALL_PATH in $(find "$TARBALLS" -mindepth 1 -maxdepth 1)
 do
     echo "Extracting $TARBALL_PATH"
     FILENAME="$(basename "$TARBALL_PATH")"
