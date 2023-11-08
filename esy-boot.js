@@ -24,9 +24,7 @@ const Package = {
 
 const Compile = {
   rule: ({ target, deps, buildCommands }) =>
-    `${target}: ${deps.join(" ")}\n\t${buildCommands
-      .map((command) => command.join(" "))
-      .join("; ")}`,
+    `${target}: ${deps.join(" ")}\n\t${buildCommands.join("\n\t")}`,
   makeFile: (rules) => {
     let compiledRules = rules.map(Compile.rule).join("\n\n");
     let phonyTargets = rules.filter((r) => r.phony).map((r) => r.target);
@@ -280,33 +278,25 @@ async function traverse(
     let curBin = renderedEnv["cur__bin"];
     let envFile = `${curTargetDir}.env`;
     let pathFile = `${curTargetDir}.path`;
+    let commandsFile = `${curTargetDir}.commands`;
 
     let renderedEnvStr = Env.toString(renderedEnv);
     await fs.writeFile(envFile, renderedEnvStr);
     await fs.writeFile(pathFile, renderedEnv["PATH"]);
     curInstallMap.set(packageName, curInstallImmutable);
 
-    let buildCommands = buildPlan.build
-      .map((arg) =>
-        arg.map((cmd) =>
-          renderEsyVariables(cmd, {
-            localStore,
-            store,
-            globalStorePrefix,
-            sources,
-            project,
-          })
-        )
+    let buildCommands = buildPlan.build.map((arg) =>
+      arg.map((cmd) =>
+        renderEsyVariables(cmd, {
+          localStore,
+          store,
+          globalStorePrefix,
+          sources,
+          project,
+        })
       )
-      .map((args) => {
-        return [
-          tools.buildEnvSh,
-          envFile,
-          pathFile,
-          `"${args.map((c) => "'" + c.replace(/'/g, "") + "'").join(" ")}"`,
-        ];
-      });
-    buildCommands = [["cd", curRoot]].concat(buildCommands);
+    );
+    buildCommands = [["pushd", curRoot]].concat(buildCommands);
     if (buildsInSource) {
       buildCommands = [
         ["rm", "-rf", curRoot],
@@ -342,14 +332,7 @@ async function traverse(
                     "esy-installer"
                   );
                 }
-                return [
-                  tools.buildEnvSh,
-                  envFile,
-                  pathFile,
-                  `"${args
-                    .map((c) => "'" + c.replace(/'/g, "") + "'")
-                    .join(" ")}"`,
-                ];
+                return args;
               })
           : [
               [
@@ -362,7 +345,8 @@ async function traverse(
                 packageName,
               ],
             ]
-      );
+      )
+      .concat([["popd"]]);
     // DEPRECATED: the following approach is no longer in use.
     // // A trick to make sure setup-esy-installer is run before everything else, including Dune
     // if (packageName === "@opam/dune" || packageName === "@opam/ocamlbuild") {
@@ -383,10 +367,20 @@ async function traverse(
 
     let deps = dependencies.map(Package.nameOfLockEntry);
 
+    await fs.writeFile(
+      commandsFile,
+      `#!/bin/sh
+set -ex;
+${buildCommands.map((command) => command.join(" ")).join(";\n")}`
+    );
+
     makeFile.set(curInstallImmutable, {
       target: curInstallImmutable,
       deps,
-      buildCommands,
+      buildCommands: [
+        `PATH=$(shell cat "${pathFile}")`,
+        `env -i -S $(shell cat ${envFile}) sh ${commandsFile}`,
+      ],
     });
 
     makeFile.set(packageName, {
