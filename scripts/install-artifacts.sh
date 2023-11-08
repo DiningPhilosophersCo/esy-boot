@@ -8,4 +8,4 @@ ESY_INSTALLER_PATH="$3"
 # PREFIX="$4" # TODO stop passing the this argument from caller
 # PACKAGE_NAME="$5" # TODO stop passing the this argument from caller
 
-find "${ENV_FILE%.env}" -name '*.install' -exec "$ESY_INSTALLER_PATH" {} ';'
+find "${ENV_FILE%.env}" -name '*.install' -maxdepth 1 -exec "$ESY_INSTALLER_PATH" {} ';'
