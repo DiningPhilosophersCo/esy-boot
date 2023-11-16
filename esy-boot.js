@@ -367,6 +367,9 @@ async function traverse(
 
     let deps = dependencies.map(Package.nameOfLockEntry);
 
+    buildCommands = buildCommands.map((command) =>
+      command.map((c) => `"${c}"`)
+    );
     await fs.writeFile(
       commandsFile,
       `#!/bin/sh
@@ -563,6 +566,59 @@ async function compileEsyBootInstaller({ esyBootInstallerSrcPath, ...args }) {
   return installPath;
 }
 
+async function manualCopySource(pkg, cwd, sources) {
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // BOOT_SEQ_PATH="./_boot/sources/$(esy build-plan -p @opam/seq | jq -r .sourcePath | xargs basename)" //
+  // mkdir -p "$BOOT_SEQ_PATH"									   //
+  // SEQ_PACKAGEID=$(jq -r 'keys[]' ./_esy/default/installation.json | grep opam/seq)			   //
+  // SEQ_SOURCE_PATH_QUERY=".[\"$SEQ_PACKAGEID\"]"							   //
+  // SEQ_SOURCE_PATH=$(jq -r "$SEQ_SOURCE_PATH_QUERY" ./_esy/default/installation.json)		   //
+  // mkdir -p _boot/store/3/b _boot/store/b _boot/store/i						   //
+  // cp -r "$SEQ_SOURCE_PATH" "$(dirname $BOOT_SEQ_PATH)"						   //
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  try {
+    const esyBuildPlanPkgSrcPath = (await esyBuildPlan(cwd, pkg)).sourcePath;
+    const bootStorePkgSrcPath = path.join(
+      sources,
+      path.basename(esyBuildPlanPkgSrcPath)
+    );
+    const installationJson = require(path.join(
+      cwd,
+      "_esy",
+      "default",
+      "installation.json"
+    ));
+    const possiblePkgPackageIDs = Object.keys(installationJson).filter((k) =>
+      k.startsWith(pkg)
+    );
+    let pkgPackageID;
+    if (possiblePkgPackageIDs.length > 0) {
+      pkgPackageID = possiblePkgPackageIDs[0];
+      let pkgSourcePath = installationJson[pkgPackageID];
+      console.log("rm -rf", bootStorePkgSrcPath);
+      await fs.rmdir(bootStorePkgSrcPath, { recursive: true });
+      await fs.mkdir(bootStorePkgSrcPath, { recursive: true });
+      console.log("Copying", pkgSourcePath, "to", bootStorePkgSrcPath);
+      await fs.cp(pkgSourcePath, bootStorePkgSrcPath, { recursive: true });
+    }
+  } catch (e) {
+    if (
+      e &&
+      e.stderr &&
+      e.stderr.toString() !==
+        `error: no package found: ${pkg}
+  
+esy: exiting due to errors above
+`
+    ) {
+      throw e;
+    } else {
+      console.error(e);
+    }
+  }
+}
+
 async function main(fileName) {
   const cwd = process.cwd();
   const {
@@ -583,50 +639,11 @@ async function main(fileName) {
   });
 
   // FIXME: @opam/seq doesn't get extracted properly. Has to be done from esy store
+  // FIXME: ocamlfind doesn't get extracted properly. Has to be done from esy store
 
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // BOOT_SEQ_PATH="./_boot/sources/$(esy build-plan -p @opam/seq | jq -r .sourcePath | xargs basename)" //
-  // mkdir -p "$BOOT_SEQ_PATH"									   //
-  // SEQ_PACKAGEID=$(jq -r 'keys[]' ./_esy/default/installation.json | grep opam/seq)			   //
-  // SEQ_SOURCE_PATH_QUERY=".[\"$SEQ_PACKAGEID\"]"							   //
-  // SEQ_SOURCE_PATH=$(jq -r "$SEQ_SOURCE_PATH_QUERY" ./_esy/default/installation.json)		   //
-  // mkdir -p _boot/store/3/b _boot/store/b _boot/store/i						   //
-  // cp -r "$SEQ_SOURCE_PATH" "$(dirname $BOOT_SEQ_PATH)"						   //
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-  try {
-    const esyBuildPlanSeqSrcPath = (await esyBuildPlan(cwd, "@opam/seq"))
-      .sourcePath;
-    const bootStoreSeqSrcPath = path.join(
-      sources,
-      path.basename(esyBuildPlanSeqSrcPath)
-    );
-    const installationJson = require(path.join(
-      cwd,
-      "_esy",
-      "default",
-      "installation.json"
-    ));
-    const possibleSeqPackageIDs = Object.keys(installationJson).filter((k) =>
-      k.startsWith("@opam/seq")
-    );
-    let seqPackageID;
-    if (possibleSeqPackageIDs.length > 0) {
-      seqPackageID = possibleSeqPackageIDs[0];
-      let seqSourcePath = installationJson[seqPackageID];
-      await fs.cp(seqSourcePath, bootStoreSeqSrcPath, { recursive: true });
-    }
-  } catch (e) {
-    if (
-      e.stderr.toString() !==
-      `error: no package found: @opam/seq
-  
-esy: exiting due to errors above
-`
-    ) {
-      throw e;
-    }
-  }
+  await manualCopySource("@opam/seq", cwd, sources);
+  await manualCopySource("@opam/ocamlfind", cwd, sources);
+  await manualCopySource("@opam/ocamlbuild", cwd, sources);
 
   const esyBootInstallerInstallPath = await compileEsyBootInstaller({
     localStore,
