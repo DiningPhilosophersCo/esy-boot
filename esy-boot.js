@@ -7,8 +7,8 @@ const Tools = {
   init: (projectRoot) => ({
     buildEnvSh: `${projectRoot}/_boot/scripts/build-env.sh`,
     prepareBuildSh: `${projectRoot}/_boot/scripts/prepare-build.sh`,
-    installArtifactsSh: `${projectRoot}/_boot/scripts/install-artifacts.sh`,
-  }),
+    installArtifactsSh: `${projectRoot}/_boot/scripts/install-artifacts.sh`
+  })
 };
 
 const Package = {
@@ -19,7 +19,7 @@ const Package = {
     } else {
       return "@" + parts[1];
     }
-  },
+  }
 };
 
 const Compile = {
@@ -35,7 +35,7 @@ ${compiledRules}`;
     } else {
       return compiledRules;
     }
-  },
+  }
 };
 
 const Env = {
@@ -46,7 +46,7 @@ const Env = {
         store,
         globalStorePrefix,
         sources,
-        project,
+        project
       });
       return acc;
     }, {});
@@ -62,7 +62,7 @@ const Env = {
         return `${key}=${v}`;
       })
       .join(" ");
-  },
+  }
 };
 
 // {
@@ -256,7 +256,7 @@ async function traverse(
       store,
       globalStorePrefix,
       sources,
-      project,
+      project
     });
     let buildsInSource =
       buildPlan.buildType == "in-source" || buildPlan.buildPlan == "_build";
@@ -298,7 +298,7 @@ async function traverse(
           store,
           globalStorePrefix,
           sources,
-          project,
+          project
         })
       )
     );
@@ -306,12 +306,12 @@ async function traverse(
     if (buildsInSource) {
       buildCommands = [
         ["rm", "-rf", curRoot],
-        ["cp", "-R", `${curOriginalRoot}`, curRoot],
+        ["cp", "-R", `${curOriginalRoot}`, curRoot]
       ].concat(buildCommands);
     } else {
       buildCommands = [
         ["rm", "-rf", curTargetDir],
-        ["mkdir", "-p", curTargetDir],
+        ["mkdir", "-p", curTargetDir]
       ].concat(buildCommands);
     }
     buildCommands = [["bash", tools.prepareBuildSh, curInstall]]
@@ -326,7 +326,7 @@ async function traverse(
                     store,
                     globalStorePrefix,
                     sources,
-                    project,
+                    project
                   })
                 )
               )
@@ -348,8 +348,8 @@ async function traverse(
                 pathFile,
                 path.join(esyBootInstallerInstallPath, "bin", "esy-installer"),
                 curInstallImmutable,
-                packageName,
-              ],
+                packageName
+              ]
             ]
       )
       .concat([["popd"]]);
@@ -388,15 +388,15 @@ ${buildCommands.map((command) => command.join(" ")).join(";\n")}`
       deps,
       buildCommands: [
         `PATH=$(shell cat "${pathFile}")`,
-        `env -i -S $(shell cat ${envFile}) sh ${commandsFile}`,
-      ],
+        `env -i -S $(shell cat ${envFile}) sh ${commandsFile}`
+      ]
     });
 
     makeFile.set(packageName, {
       target: packageName,
       deps: [curInstallImmutable],
       buildCommands: [],
-      phony: true,
+      phony: true
     });
 
     return makeFile;
@@ -453,7 +453,7 @@ async function compileMakefile({
   sources,
   esyBootInstallerInstallPath,
   cwd,
-  projectRoot,
+  projectRoot
 }) {
   let makeFile = await emitBuild(
     cwd,
@@ -523,7 +523,7 @@ async function setupPaths(cwd) {
     store,
     globalStorePrefix,
     esyBootInstallerSrcPath,
-    esyBootInstallerTarballs,
+    esyBootInstallerTarballs
   };
 }
 
@@ -540,7 +540,7 @@ async function fetchSources({
   tarballs,
   esyBootInstallerTarballs,
   sources,
-  esyBootInstallerSrcPath,
+  esyBootInstallerSrcPath
 }) {
   let cmd = `sh ${__dirname}/scripts/fetch-sources.sh --sources-cache=${sources} --tarballs=${tarballs}`;
   log(`Fetching source tarballs with '${cmd}'`);
@@ -552,11 +552,9 @@ async function fetchSources({
 
 async function compileEsyBootInstaller({ esyBootInstallerSrcPath, ...args }) {
   let fileName = "boot.esy-boot-installer.Makefile";
-  const lockFile = require(path.join(
-    esyBootInstallerSrcPath,
-    "esy.lock",
-    "index.json"
-  ));
+  const lockFile = require(
+    path.join(esyBootInstallerSrcPath, "esy.lock", "index.json")
+  );
   esyInstall(esyBootInstallerSrcPath);
   // esy status doesn't work here because esy uses localStore, _esy,
   // to install artifacts. We, OTOH, have set localStore = globalStore
@@ -567,7 +565,7 @@ async function compileEsyBootInstaller({ esyBootInstallerSrcPath, ...args }) {
     lockFile,
     installPath,
     ...args,
-    cwd: esyBootInstallerSrcPath,
+    cwd: esyBootInstallerSrcPath
   });
   return installPath;
 }
@@ -589,12 +587,9 @@ async function manualCopySource(pkg, cwd, sources) {
       sources,
       path.basename(esyBuildPlanPkgSrcPath)
     );
-    const installationJson = require(path.join(
-      cwd,
-      "_esy",
-      "default",
-      "installation.json"
-    ));
+    const installationJson = require(
+      path.join(cwd, "_esy", "default", "installation.json")
+    );
     const possiblePkgPackageIDs = Object.keys(installationJson).filter((k) =>
       k.startsWith(pkg)
     );
@@ -634,14 +629,14 @@ async function main(fileName) {
     store,
     globalStorePrefix,
     esyBootInstallerSrcPath,
-    esyBootInstallerTarballs,
+    esyBootInstallerTarballs
   } = await setupPaths(cwd);
   await fetchSources({
     cwd,
     tarballs,
     sources,
     esyBootInstallerSrcPath,
-    esyBootInstallerTarballs,
+    esyBootInstallerTarballs
   });
 
   // FIXME: @opam/seq doesn't get extracted properly. Has to be done from esy store
@@ -662,7 +657,7 @@ async function main(fileName) {
     sources,
     esyBootInstallerSrcPath,
     cwd,
-    projectRoot: cwd,
+    projectRoot: cwd
   });
   const lockFile = require(path.join(cwd, "esy.lock", "index.json"));
   await compileMakefile({
@@ -674,7 +669,7 @@ async function main(fileName) {
     sources,
     esyBootInstallerInstallPath,
     cwd,
-    projectRoot: cwd,
+    projectRoot: cwd
   });
 }
 
