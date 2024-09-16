@@ -1,15 +1,9 @@
-# Esy Boot
+# Getting started
 
-## Bootstrapping any Reason/OCaml project without Opam or Esy
-
-[esy](https://esy.sh/) can describe each package's build sandbox with `esy build-plan`. I use this and lock files to create a bash scripts that run in an isolated environment to build all the packages in an `esy` project.
+[esy](https://esy.sh/) can describe each package's build sandbox with `esy build-plan`- this and lock files can be used to create a bash scripts that run in an isolated environment to build all the packages in an `esy` project.
 
 > This project is still work in progress and not available on NPM yet. 
 > Also needs a final missing piece before using it. See (and subscribe to get notified) https://github.com/ManasJayanth/esy-boot/issues/1
-
-## Usecase
-
-Building native Reason/OCaml projects from source where a package manager isn't available.
 
 ## Installation
 Not build steps. Just make sure this project's path is available in `$PATH`.
@@ -53,11 +47,3 @@ make -f ./boot.esy-boot-installer.Makefile boot # not available yet
 make -j8 -f ./boot.esy-boot-installer.Makefile esy-boot-installer
 make -j8 -f ./boot.Makefile <project-name>
 ```	
-
-## How does it work?
-
-(TODO)
-
-## Sponsorship
-
-Your sponsorship would go a long way in writing tools like this that improve Reason and OCaml developer experience. Consider sponsoring me via [Github](https://github.com/ManasJayanth) or contact me directly via email: `manas` `at` `dining-philosphers.in`
