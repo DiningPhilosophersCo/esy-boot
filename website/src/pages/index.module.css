@@ -5,9 +5,12 @@
 
 .heroBanner {
   padding: 4rem 0;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
+  text-align: left;
+  margin-top: -4rem;
+  height: 100vh;
+  width: 100%;
+  background-color: white;
+  color: #333;
 }
 
 @media screen and (max-width: 996px) {
@@ -16,8 +19,3 @@
   }
 }
 
-.buttons {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}

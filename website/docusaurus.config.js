@@ -8,20 +8,20 @@ import { themes as prismThemes } from "prism-react-renderer";
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: "Esy Boot",
-  tagline: "Bootstrapping OCaml without package managers",
+  title: "Bootstrapping OCaml Projects",
+  tagline: "... without package managers",
   favicon: "img/favicon.ico",
 
   // Set the production url of your site here
-  url: "https://your-docusaurus-site.example.com",
+  url: "https://dining-philosophers.in",
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: "/",
+  baseUrl: "/esy-boot",
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: "facebook", // Usually your GitHub org/user name.
-  projectName: "docusaurus", // Usually your repo name.
+  organizationName: "DiningPhilosophersCo", // Usually your GitHub org/user name.
+  projectName: "esy-boot", // Usually your repo name.
 
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
@@ -44,7 +44,7 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            "https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/"
+            "https://github.com/DiningPhilosophersCo/esy-boot/tree/main/website/docs"
         },
         blog: {
           showReadingTime: true,
@@ -55,7 +55,7 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            "https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/",
+            "https://github.com/DiningPhilosophersCo/esy-boot/tree/main/website/docs",
           // Useful options to enforce blogging best practices
           onInlineTags: "warn",
           onInlineAuthors: "warn",
@@ -72,25 +72,19 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       // Replace with your project's social card
-      image: "img/docusaurus-social-card.jpg",
+      image: "img/social-card.jpg",
       navbar: {
-        title: "My Site",
-        logo: {
-          alt: "My Site Logo",
-          src: "img/logo.svg"
-        },
+        title: "Bootstrapping OCaml Projects",
+        // logo: {
+        //   alt: "Dining Philosophers Logo",
+        //   src: "img/logo.png"
+        // },
         items: [
-          {
-            type: "docSidebar",
-            sidebarId: "tutorialSidebar",
-            position: "left",
-            label: "Tutorial"
-          },
           { to: "/blog", label: "Blog", position: "left" },
           {
-            href: "https://github.com/facebook/docusaurus",
+            href: "https://github.com/DiningPhilosophersCo/esy-boot",
             label: "GitHub",
-            position: "right"
+            position: "left"
           }
         ]
       },
@@ -101,25 +95,8 @@ const config = {
             title: "Docs",
             items: [
               {
-                label: "Tutorial",
-                to: "/docs/intro"
-              }
-            ]
-          },
-          {
-            title: "Community",
-            items: [
-              {
-                label: "Stack Overflow",
-                href: "https://stackoverflow.com/questions/tagged/docusaurus"
-              },
-              {
-                label: "Discord",
-                href: "https://discordapp.com/invite/docusaurus"
-              },
-              {
-                label: "Twitter",
-                href: "https://twitter.com/docusaurus"
+                label: "About",
+                to: "/docs/about"
               }
             ]
           },
@@ -132,12 +109,12 @@ const config = {
               },
               {
                 label: "GitHub",
-                href: "https://github.com/facebook/docusaurus"
+                href: "https://github.com/DiningPhilosophersCo/esy-boot"
               }
             ]
           }
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`
+        copyright: `Creative Commons (CC BY-NC-ND). Dining Philosophers, LLP. Built with Docusaurus.`
       },
       prism: {
         theme: prismThemes.github,
