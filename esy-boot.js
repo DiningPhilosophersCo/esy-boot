@@ -171,7 +171,7 @@ const Env = {
 //   return plan;
 // }
 
-async function esyBuildPlan(cwd, packageName) {
+async function esyBuildPlan(cwd, packageName, opts = {}) {
   //
   // DEPRECATED: setup-esy-installer will no longer be
   // hooked into current sandbox
@@ -195,7 +195,13 @@ async function esyBuildPlan(cwd, packageName) {
   //    how its also used to build esy-boot-installer in a separate
   //    sandbox.
   //
-  let cmd = `esy build-plan --release -P ${cwd}`;
+  const { release = false } = opts;
+  let cmd;
+  if (release) {
+    cmd = `esy build-plan --release -P ${cwd}`;
+  } else {
+    cmd = `esy build-plan -P ${cwd}`;
+  }
   if (packageName) {
     cmd = `${cmd} -p ${packageName}`;
   }
@@ -641,7 +647,11 @@ async function main(fileName) {
   // FIXME: @opam/seq doesn't get extracted properly. Has to be done from esy store
   // FIXME: ocamlfind doesn't get extracted properly. Has to be done from esy store
 
-  await manualCopySource("@opam/seq", cwd, sources);
+  // It's not necessary that @opam/seq be depended on by a non-dev dependency
+  // To be account for both cases, we skip the --release flag for @opam/ seq
+  // Else, we run into,
+  // error: not build defined for @opam/seq
+  await manualCopySource("@opam/seq", cwd, sources, { release: false });
   await manualCopySource("@opam/ocamlfind", cwd, sources);
   await manualCopySource("@opam/ocamlbuild", cwd, sources);
 
